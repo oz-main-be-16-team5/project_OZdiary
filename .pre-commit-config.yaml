@@ -1,0 +1,18 @@
+# 사용전
+# uv add --dev pre-commit
+# pre-commit install 하셔야 합니다
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit     # Ruff 공식 레포 주소
+    rev: v0.3.5
+    hooks:
+      - id: ruff                                           # 코드 lint(검사)
+        args: [--fix]                                      # 수정 가능한 코드 자동 수정
+      - id: ruff-format                                    # Ruff 스타일로 코드 정리
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks   # pre-commit 공식 레포 주소
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace                            # 코드 줄 끝에 공백 제거
+      - id: end-of-file-fixer                              # 파일 맨 아래에 공백 한줄 추가
+      - id: check-yaml                                     # yaml 파일 문법 오류 검사
+      - id: check-added-large-files                        # 큰용량 파일 커밋 방지
