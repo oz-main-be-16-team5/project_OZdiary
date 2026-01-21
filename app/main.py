@@ -1,15 +1,9 @@
 from fastapi import FastAPI
-from tortoise.contrib.fastapi import register_tortoise
-from app.db.database import TORTOISE_CONFIG
+from app.db.base import init_db
 
 app = FastAPI()
 
-# Tortoise ORM 등록
-register_tortoise(
-    app,
-    config=TORTOISE_CONFIG,
-    add_exception_handlers=True,
-)
+init_db(app)
 
 
 @app.get("/")
