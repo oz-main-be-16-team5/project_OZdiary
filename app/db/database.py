@@ -7,6 +7,8 @@ MODELS = [
     "app.models.diary",
     "app.models.quote",
     "app.models.question",
+    "app.models.bookmark",
+    "app.models.user_question",
     "aerich.models",  # Aerich용 모델 추가
 ]
 
