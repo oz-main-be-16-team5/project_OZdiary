@@ -115,3 +115,17 @@ fabric.properties
 .idea/**/azureSettings.xml
 
 # End of https://www.toptal.com/developers/gitignore/api/pycharm
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local env files
+.env
+.env.dev
+.env.local
+
+# JetBrains (PyCharm)
+.idea/
