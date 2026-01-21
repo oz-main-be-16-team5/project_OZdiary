@@ -3,10 +3,10 @@ from app.core.config import settings
 
 # 모델 위치들을 리스트로 관리 (Aerich 인식용)
 MODELS = [
-    # "app.models.user",
-    # "app.models.diary",
-    # "app.models.quote",
-    # "app.models.question",
+    "app.models.user",
+    "app.models.diary",
+    "app.models.quote",
+    "app.models.question",
     "aerich.models",  # Aerich용 모델 추가
 ]
 
