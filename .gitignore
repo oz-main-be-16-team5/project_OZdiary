@@ -133,6 +133,8 @@ env.bak/
 venv.bak/
 .ai/
 
+migrations
+
 # Spyder project settings
 .spyderproject
 .spyproject
