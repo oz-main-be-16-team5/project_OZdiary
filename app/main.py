@@ -1,16 +1,17 @@
 from fastapi import FastAPI
+from tortoise.contrib.fastapi import register_tortoise
+from app.db.database import TORTOISE_CONFIG
 
 app = FastAPI()
 
+# Tortoise ORM 등록
+register_tortoise(
+    app,
+    config=TORTOISE_CONFIG,
+    add_exception_handlers=True,
+)
+
 
 @app.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
-
-
-
+async def health_check():
+    return {"status": "ok"}
