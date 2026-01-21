@@ -18,7 +18,7 @@ Danbam은 사용자가 하루에 하나의 질문을 받고,
 
 4. JWT 기반 인증으로 안전한 사용자 관리
 
-![img_1.png](img_1.png)<img width="1605" height="579" alt="image" src="https://github.com/user-attachments/assets/9e5a20f3-9729-40a8-b1cb-f81c828aa9b2" />
+![img_3.png](img_3.png)
 
 사용자가 받은 질문, 작성한 일기, 북마크한 명언을 명확하게 추적할 수 있도록 관계를 구성했습니다.
 
