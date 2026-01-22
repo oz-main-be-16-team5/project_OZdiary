@@ -24,19 +24,19 @@ async def get_current_user(
     cred: HTTPAuthorizationCredentials | None = Depends(bearer),
 ) -> UserModel:
     if cred is None or cred.scheme.lower() != "bearer":
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
+        raise HTTPException(status_code=401, detail="인증 정보가 없습니다.")
 
     payload = decode_token(cred.credentials)
     user_id = payload.get("sub")
     if not user_id:
-        raise HTTPException(status_code=401, detail="Could not validate credentials")
+        raise HTTPException(status_code=401, detail="유효하지 않은 토큰입니다.")
 
     user = await UserModel.filter(user_id=int(user_id)).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="사용자를 찾을 수 없습니다.")
 
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="Inactive user")
+        raise HTTPException(status_code=403, detail="비활성화된 사용자 입니다.")
 
     return user
 
@@ -53,7 +53,7 @@ async def register(payload: UserCreate):
     """
     exists = await UserModel.filter(email=payload.email).exists()
     if exists:
-        raise HTTPException(status_code=409, detail="Email already exists")
+        raise HTTPException(status_code=409, detail="이미 사용 중인 이메일 입니다.")
 
     pw_hash = hash_password(payload.password)
 
@@ -86,17 +86,18 @@ async def login(payload: UserLogin):
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="이메일 또는 비밀번호가 올바르지 않습니다.",
         )
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
+            status_code=status.HTTP_403_FORBIDDEN, detail="비활성화된 사용자 입니다."
         )
 
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="이메일 또는 비밀번호가 올바르지 않습니다.",
         )
 
     token = create_access_token(subject=str(user.user_id))
@@ -129,12 +130,12 @@ async def update_me(payload: UserUpdate, user: UserModel = Depends(get_current_u
     """
     # 아무것도 안보내는거 방지
     if payload.username is None and payload.email is None:
-        raise HTTPException(status_code=400, detail="No fields to update")
+        raise HTTPException(status_code=400, detail="수정할 항목이 없습니다.")
 
     if payload.email is not None and payload.email != user.email:
         exists = await UserModel.filter(email=payload.email).exists()
         if exists:
-            raise HTTPException(status_code=409, detail="Email already exists")
+            raise HTTPException(status_code=409, detail="이미 사용 중인 이메일 입니다.")
         user.email = payload.email
 
     if payload.username is not None:
@@ -163,7 +164,9 @@ async def change_password(
     """
     # 현재 비밀번호 확인
     if not verify_password(payload.current_password, user.password_hash):
-        raise HTTPException(status_code=400, detail="Incorrect password")
+        raise HTTPException(
+            status_code=400, detail="현재 비밀번호가 올바르지 않습니다."
+        )
     user.password_hash = hash_password(payload.new_password)
     await user.save(update_fields=["password_hash"])
 
@@ -183,10 +186,14 @@ async def get_user_id_by_token(payload: UserIdByTokenRequest):
         user_id = decoded_payload.get("sub")
 
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token: sub not found")
+            raise HTTPException(
+                status_code=401, detail="토큰에 사용자 정보가 없습니다."
+            )
 
         return UserIdByTokenResponse(user_id=user_id)
 
     except Exception as e:
         # 토큰이 만료되었거나 변조된 경우 decode_token에서 발생한 에러 처리
-        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+        raise HTTPException(
+            status_code=401, detail=f"유효하지 않은 토큰 입니다.: {str(e)}"
+        )

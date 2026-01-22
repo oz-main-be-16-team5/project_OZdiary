@@ -12,12 +12,14 @@ app = FastAPI()
 init_db(app)
 
 app.include_router(auth_router)
+
 app.include_router(question_router)
 
 app.include_router(postgres_router)
 
 # quote API 등록
 app.include_router(quote_router)
+
 
 @app.get("/")
 async def health_check():
