@@ -39,31 +39,23 @@ async def get_random_quote():
 
 
 # 2) 명언 생성 (스크래핑 저장용)
-@router.post("", response_model=QuoteResponse)
+@router.post("", response_model=QuoteResponse, status_code=status.HTTP_201_CREATED)
 async def create_quote(payload: CreateQuoteRequest):
+
     # 중복 명언 저장 방지
     exists = await QuoteModel.get_or_none(
         content=payload.content,
         author=payload.author,
     )
     if exists:
-        # 중복이면 생성이 아님 -> 200
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content=QuoteResponse.model_validate(exists).model_dump(),
-        )
+        return QuoteResponse.model_validate(exists)
 
-    # 실제 DB 저장
     quote = await QuoteModel.create(
         content=payload.content,
         author=payload.author,
     )
 
-    # 신규 생성 -> 201
-    return JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content=QuoteResponse.model_validate(quote).model_dump(),
-    )
+    return QuoteResponse.model_validate(quote)
 
 
 # 3) 북마크 추가
