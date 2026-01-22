@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from app.models.base_model import BaseModel
 from app.models.user import UserModel
 from tortoise import fields

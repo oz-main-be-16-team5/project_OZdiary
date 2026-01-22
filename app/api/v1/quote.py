@@ -69,7 +69,7 @@ async def add_bookmark(
     user_id = payload.user_id
 
     # 1) 명언 존재 확인
-    quote = await QuoteModel.get_or_none(id=quote_id)
+    quote = await QuoteModel.get_or_none(user_id=quote_id)
     if not quote:
         raise HTTPException(status_code=404, detail="명언을 찾지 못했습니다.")
 
