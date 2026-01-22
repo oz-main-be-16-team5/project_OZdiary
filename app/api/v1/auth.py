@@ -13,7 +13,7 @@ from app.core.security import hash_password, verify_password
 from app.core.jwt import decode_token, create_access_token
 
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["danbam"])
 
 bearer = HTTPBearer(auto_error=False)
 

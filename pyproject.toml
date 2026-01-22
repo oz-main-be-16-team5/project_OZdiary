@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
     "aerich==0.7.2",
     "asyncpg>=0.30.0",
+    "email-validator>=2.3.0",
     "fastapi>=0.115.0",
     "jose>=1.0.0",
     "jwt>=1.4.0",
