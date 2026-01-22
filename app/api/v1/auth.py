@@ -29,7 +29,7 @@ async def get_current_user(
     if not user_id:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
 
-    user = await UserModel.filter(id=int(user_id)).first()
+    user = await UserModel.filter(user_id=int(user_id)).first()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
@@ -63,7 +63,7 @@ async def register(payload: UserCreate):
     )
 
     return UserResponse(
-        id=user.id,
+        id=user.user_id,
         username=user.username,
         email=user.email,
         is_active=user.is_active,
@@ -97,7 +97,7 @@ async def login(payload: UserLogin):
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
         )
 
-    token = create_access_token(subject=str(user.id))
+    token = create_access_token(subject=str(user.user_id))
     return TokenResponse(access_token=token, token_type="bearer")
 
 
@@ -109,7 +109,7 @@ async def me(user: UserModel = Depends(get_current_user)):
     - 로그인된 사용자만 접근 가능
     """
     return UserResponse(
-        id=user.id,
+        id=user.user_id,
         username=user.username,
         email=user.email,
         is_active=user.is_active,
@@ -141,7 +141,7 @@ async def update_me(payload: UserUpdate, user: UserModel = Depends(get_current_u
     await user.save()
 
     return UserResponse(
-        id=user.id,
+        id=user.user_id,
         username=user.username,
         email=user.email,
         is_active=user.is_active,
