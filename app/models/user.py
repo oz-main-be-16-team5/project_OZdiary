@@ -12,6 +12,7 @@ class UserModel(Model):
         max_length=255, unique=True, description="User's email address"
     )
     is_active = fields.BooleanField(default=True, description="User's active status")
+    created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(
         auto_now=True
     )  # auto_now = 수정될 때마다 자동으로 지금 시간으로 바꿔라
