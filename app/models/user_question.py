@@ -4,7 +4,7 @@ from app.models.question import QuestionModel
 from tortoise import fields
 
 
-class UserQustionModel(BaseModel):
+class UserQuestionModel(BaseModel):
     user: fields.ForeignKeyRelation[UserModel] = fields.ForeignKeyField(
         "models.UserModel",
         related_name="user_questions",
