@@ -6,12 +6,15 @@ from starlette.status import (
     HTTP_500_INTERNAL_SERVER_ERROR,
 )
 
+from app.api.v1.auth import get_user_id_by_token
+
 from app.schemas.diary import (
     DiaryResponse,
     CreateDiaryRequest,
     UpdateDiaryRequest,
     DeleteDiaryResponse,
 )
+from app.schemas.user import UserIdByTokenRequest
 from app.services.diary_service import (
     service_create_diary,
     service_get_diaries,
@@ -29,13 +32,14 @@ postgres_router = APIRouter(prefix="/v1/diary", tags=["Diary"], redirect_slashes
 @postgres_router.post(
     "/", description="일기를 생성합니다.", status_code=HTTP_201_CREATED
 )
-async def api_create_diary(diary_data: CreateDiaryRequest) -> DiaryResponse:
-    # 미구현 : 현재 사용자 정보를 얻어 user_id 채우기
-    # 임시 user_id
-    temp_user_id = 1
+async def api_create_diary(
+    diary_data: CreateDiaryRequest,
+    token: str,
+) -> DiaryResponse:
+    response = await get_user_id_by_token(UserIdByTokenRequest(token=token))
+    user_id = response.user_id
 
-    diary = await service_create_diary(temp_user_id, diary_data)
-    # diary = await service_create_diary(diary_data)
+    diary = await service_create_diary(user_id, diary_data)
     await diary.fetch_related("user")
 
     return DiaryResponse(
@@ -50,10 +54,11 @@ async def api_create_diary(diary_data: CreateDiaryRequest) -> DiaryResponse:
 
 # READ
 @postgres_router.get("/", response_model=List[DiaryResponse])
-async def api_read_diaries(user_id: int):
-    # 임시 user_id
-    temp_user_id = 1
-    return await service_get_diaries(temp_user_id)
+async def api_read_diaries(token: str):
+    response = await get_user_id_by_token(UserIdByTokenRequest(token=token))
+    user_id = response.user_id
+
+    return await service_get_diaries(user_id)
 
 
 @postgres_router.get("/{diary_id}", response_model=DiaryResponse)

@@ -7,6 +7,8 @@ from app.schemas.user import (
     PasswordChange,
     UserResponse,
     TokenResponse,
+    UserIdByTokenRequest,
+    UserIdByTokenResponse,
 )
 from app.models.user import UserModel
 from app.core.security import hash_password, verify_password
@@ -166,3 +168,25 @@ async def change_password(
     await user.save(update_fields=["password_hash"])
 
     return None
+
+
+@router.post("/extract-id", response_model=UserIdByTokenResponse)
+async def get_user_id_by_token(payload: UserIdByTokenRequest):
+    """
+    JSON 바디로 전달된 토큰을 디코딩하여 user_id를 반환합니다.
+    """
+    try:
+        # 1. 토큰 디코딩 (유효기간 및 서명 검증)
+        decoded_payload = decode_token(payload.token)
+
+        # 2. sub(user_id) 추출
+        user_id = decoded_payload.get("sub")
+
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token: sub not found")
+
+        return UserIdByTokenResponse(user_id=user_id)
+
+    except Exception as e:
+        # 토큰이 만료되었거나 변조된 경우 decode_token에서 발생한 에러 처리
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
