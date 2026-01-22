@@ -23,7 +23,9 @@ class AddBookmarkRequest(BaseModel):
 # 1) 랜덤 명언 1개
 @router.get("/random", response_model=QuoteResponse)  # <- schemas와의 연동(API 계약)
 async def get_random_quote():
-    total = await QuoteModel.all().count()  # <- db와의 연결(직접 연결X / models 통해 간접 연결)
+    total = (
+        await QuoteModel.all().count()
+    )  # <- db와의 연결(직접 연결X / models 통해 간접 연결)
     if total == 0:
         raise HTTPException(status_code=404, detail="명언을 찾지 못했습니다.")
 
@@ -41,7 +43,6 @@ async def get_random_quote():
 # 2) 명언 생성 (스크래핑 저장용)
 @router.post("", response_model=QuoteResponse, status_code=status.HTTP_201_CREATED)
 async def create_quote(payload: CreateQuoteRequest):
-
     # 중복 명언 저장 방지
     exists = await QuoteModel.get_or_none(
         content=payload.content,
@@ -73,7 +74,7 @@ async def add_bookmark(
         raise HTTPException(status_code=404, detail="명언을 찾지 못했습니다.")
 
     # 2) 유저 존재 확인
-    user = await UserModel.get_or_none(id=user_id)
+    user = await UserModel.get_or_none(user_id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾지 못했습니다.")
 
@@ -95,13 +96,14 @@ async def add_bookmark(
         content={"message": "북마크에 추가되었습니다."},
     )
 
+
 # 4) 북마크 조회 (내가 북마크한 명언 목록)
 @router.get("/bookmark", response_model=List[QuoteResponse])
 async def get_bookmarks(
-        user_id: int = Query(..., description="사용자 ID"),
+    user_id: int = Query(..., description="사용자 ID"),
 ):
     # 1) 유저 존재 확인
-    user = await UserModel.get_or_none(id=user_id)
+    user = await UserModel.get_or_none(user_id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾지 못했습니다.")
 
@@ -109,16 +111,13 @@ async def get_bookmarks(
     bookmarks = await BookmarkModel.filter(user=user).prefetch_related("quote")
 
     # 3) 명언만 추출해서 반환
-    return [
-        QuoteResponse.model_validate(bookmark.quote)
-        for bookmark in bookmarks
-    ]
+    return [QuoteResponse.model_validate(bookmark.quote) for bookmark in bookmarks]
+
 
 # 5) 북마크 해제
 @router.delete("/{quote_id}/bookmark")
 async def delete_bookmark(
-        quote_id: int,
-        user_id: int = Query(..., description="사용자 ID")
+    quote_id: int, user_id: int = Query(..., description="사용자 ID")
 ):
     # 1) 명언 존재 확인
     quote = await QuoteModel.get_or_none(id=quote_id)
@@ -126,7 +125,7 @@ async def delete_bookmark(
         raise HTTPException(status_code=404, detail="명언을 찾지 못했습니다.")
 
     # 2) 유저 존재 확인
-    user = await UserModel.get_or_none(id=user_id)
+    user = await UserModel.get_or_none(user_id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾지 못했습니다.")
 
@@ -139,4 +138,3 @@ async def delete_bookmark(
     # 4) 삭제
     await bookmark.delete()
     return {"message": "북마크가 해제되었습니다."}
-
