@@ -24,3 +24,10 @@ dependencies = [
 tortoise_orm = "app.db.database.TORTOISE_CONFIG"
 location = "./migrations"
 src_folder = "./."
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+]

@@ -43,7 +43,36 @@ async def get_current_user(
 
 # 회원가입
 @router.post(
-    "/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse
+    "/register", status_code=status.HTTP_201_CREATED,
+    response_model=UserResponse,
+    summary="회원가입",
+    description="이메일, 유저네임, 비밀번호를 이용해 신규 사용자를 생성합니다.",
+    responses={
+        201: {
+            "description": "회원가입 성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": 1,
+                        "username": "tester",
+                        "email": "test@test.com",
+                        "is_active": True,
+                    }
+                }
+            },
+        },
+        409: {
+            "description": "이미 존재하는 이메일",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Email already exists"}
+                }
+            },
+        },
+        422: {
+            "description": "요청 바디 검증 실패",
+        },
+    },
 )
 async def register(payload: UserCreate):
     """
@@ -75,7 +104,33 @@ async def register(payload: UserCreate):
 
 
 # 로그인
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="로그인",
+    description="이메일과 비밀번호로 로그인 후 JWT 토큰을 발급합니다.",
+    responses={
+        200: {
+            "description": "로그인 성공",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "token_type": "bearer",
+                    }
+                }
+            },
+        },
+        401: {
+            "description": "이메일 또는 비밀번호 오류",
+            "content": {"application/json": {"example": {"detail": "Incorrect email or password"}}},
+        },
+        403: {
+            "description": "비활성화 유저",
+            "content": {"application/json": {"example": {"detail": "Inactive user"}}},
+        },
+    },
+)
 async def login(payload: UserLogin):
     """
     - 사용자 로그인
