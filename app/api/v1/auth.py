@@ -12,7 +12,7 @@ from app.models.user import UserModel
 from app.core.security import hash_password, verify_password
 from app.core.jwt import decode_token, create_access_token
 
-router = APIRouter(prefix="/danbam", tags=["danbam"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -114,6 +114,7 @@ async def me(user: UserModel = Depends(get_current_user)):
         email=user.email,
         is_active=user.is_active,
         created_at=user.created_at,
+        updated_at=user.updated_at,
     )
 
 
@@ -131,7 +132,7 @@ async def update_me(payload: UserUpdate, user: UserModel = Depends(get_current_u
     if payload.email is not None and payload.email != user.email:
         exists = await UserModel.filter(email=payload.email).exists()
         if exists:
-            raise HTTPException(status_code=400, detail="Email already exists")
+            raise HTTPException(status_code=409, detail="Email already exists")
         user.email = payload.email
 
     if payload.username is not None:

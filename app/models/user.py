@@ -1,9 +1,8 @@
 from tortoise import fields
-from tortoise.models import Model
+from app.models.base_model import BaseModel
 
 
-class UserModel(Model):
-    user_id = fields.IntField(pk=True)
+class UserModel(BaseModel):
     username = fields.CharField(
         max_length=50, unique=True, description="User's username"
     )
