@@ -1,12 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Optional
 
 
 # --- Diary Create ---
 class CreateDiaryRequest(BaseModel):
-    user_id: int
-    title: str
-    content: str | None
+    title: str = Field(..., max_length=255, description="일기 제목")
+    content: Optional[str] = Field(None, description="일기 내용")
 
 
 # --- Diary Read ---
