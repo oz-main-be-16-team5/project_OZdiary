@@ -7,9 +7,13 @@ dependencies = [
     "aerich==0.7.2",
     "asyncpg>=0.30.0",
     "fastapi>=0.115.0",
+    "jose>=1.0.0",
+    "jwt>=1.4.0",
+    "passlib>=1.7.4",
     "pre-commit>=4.5.1",
     "pydantic-settings>=2.0.0",
     "python-dotenv>=1.2.1",
+    "python-jose>=3.5.0",
     "tortoise-orm==0.23.0",
     "uvicorn>=0.30.0",
 ]
