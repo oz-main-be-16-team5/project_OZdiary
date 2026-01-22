@@ -12,8 +12,7 @@ from app.models.user import UserModel
 from app.core.security import hash_password, verify_password
 from app.core.jwt import decode_token, create_access_token
 
-
-router = APIRouter(prefix="/auth", tags=["danbam"])
+router = APIRouter(prefix="/danbam", tags=["danbam"])
 
 bearer = HTTPBearer(auto_error=False)
 
@@ -45,6 +44,11 @@ async def get_current_user(
     "/register", status_code=status.HTTP_201_CREATED, response_model=UserResponse
 )
 async def register(payload: UserCreate):
+    """
+    - 신규 사용자 회원가입
+    - 이메일 중복 여부 확인
+    - 비밀번호 해싱 후 사용자 저장
+    """
     exists = await UserModel.filter(email=payload.email).exists()
     if exists:
         raise HTTPException(status_code=409, detail="Email already exists")
@@ -71,6 +75,11 @@ async def register(payload: UserCreate):
 # 로그인
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: UserLogin):
+    """
+    - 사용자 로그인
+    - username / password 검증
+    - 인증 성공 시 토큰 발급
+    """
     user = await UserModel.filter(email=payload.email).first()
     if not user:
         raise HTTPException(
@@ -85,7 +94,7 @@ async def login(payload: UserLogin):
 
     if not verify_password(payload.password, user.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect password"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password"
         )
 
     token = create_access_token(subject=str(user.id))
@@ -95,6 +104,10 @@ async def login(payload: UserLogin):
 # 조회
 @router.get("/me", response_model=UserResponse)
 async def me(user: UserModel = Depends(get_current_user)):
+    """
+    - 토큰 기반 사용자 정보 조회
+    - 로그인된 사용자만 접근 가능
+    """
     return UserResponse(
         id=user.id,
         username=user.username,
@@ -107,6 +120,10 @@ async def me(user: UserModel = Depends(get_current_user)):
 # 수정
 @router.patch("/me", response_model=UserResponse)
 async def update_me(payload: UserUpdate, user: UserModel = Depends(get_current_user)):
+    """
+    - 로그인한 사용자 정보 수정
+    -  수정 가능 항목 : username,email
+    """
     # 아무것도 안보내는거 방지
     if payload.username is None and payload.email is None:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -137,6 +154,10 @@ async def update_me(payload: UserUpdate, user: UserModel = Depends(get_current_u
 async def change_password(
     payload: PasswordChange, user: UserModel = Depends(get_current_user)
 ):
+    """
+    - 로그인된 사용자 비밀번호 변경
+    - 기존 비밀번호 검증 후 변경
+    """
     # 현재 비밀번호 확인
     if not verify_password(payload.current_password, user.password_hash):
         raise HTTPException(status_code=400, detail="Incorrect password")
