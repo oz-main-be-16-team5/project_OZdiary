@@ -314,7 +314,10 @@
       setQuoteStatus("북마크 추가 중...");
       const res = await fetch(`/quote/${quoteId}/bookmark`, {
         method: "POST",
-        headers: { ...authHeader() },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader() },
+        body: JSON.stringify({})
       });
 
       if (res.ok) {
