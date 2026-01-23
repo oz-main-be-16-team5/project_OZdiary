@@ -1,8 +1,9 @@
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
+from app.core.config import settings
 
-JWT_SECRET_KEY = "CHANGE_ME"
-JWT_ALGORITHM = "HS256"
+JWT_SECRET_KEY = settings.JWT_SECRET_KEY
+JWT_ALGORITHM = settings.JWT_ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
