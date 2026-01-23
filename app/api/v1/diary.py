@@ -28,13 +28,11 @@ from app.services.diary_service import (
 )
 
 # 라우터 생성
-postgres_router = APIRouter(prefix="/v1/diary", tags=["Diary"], redirect_slashes=False)
+diary_router = APIRouter(prefix="/v1/diary", tags=["Diary"], redirect_slashes=False)
 
 
 # CREATE
-@postgres_router.post(
-    "/", description="일기를 생성합니다.", status_code=HTTP_201_CREATED
-)
+@diary_router.post("/", description="일기를 생성합니다.", status_code=HTTP_201_CREATED)
 async def api_create_diary_by_token(
     diary_data: CreateDiaryRequest, user: UserModel = Depends(get_current_user)
 ) -> DiaryResponse:
@@ -57,7 +55,7 @@ async def api_create_diary_by_token(
     )
 
 
-@postgres_router.post(
+@diary_router.post(
     "/str",
     description="토큰 str값으로 일기를 생성합니다.",
     status_code=HTTP_201_CREATED,
@@ -87,7 +85,7 @@ async def api_create_diary_by_token_str(
 
 
 # READ
-@postgres_router.get("/", response_model=List[DiaryResponse])
+@diary_router.get("/", response_model=List[DiaryResponse])
 async def api_read_diaries_by_token(user: UserModel = Depends(get_current_user)):
     """
     토큰정보를 불러와 토큰으로부터 user_id를 얻습니다
@@ -98,7 +96,7 @@ async def api_read_diaries_by_token(user: UserModel = Depends(get_current_user))
     return await service_get_diaries(user_id)
 
 
-@postgres_router.get("/str", response_model=List[DiaryResponse])
+@diary_router.get("/str", response_model=List[DiaryResponse])
 async def api_read_diaries_by_token_str(token: str):
     """
     발급된 토큰값을 str로 입력하면 str값에서 user_id를 얻습니다
@@ -110,7 +108,7 @@ async def api_read_diaries_by_token_str(token: str):
     return await service_get_diaries(user_id)
 
 
-@postgres_router.get("/{diary_id}", response_model=DiaryResponse)
+@diary_router.get("/{diary_id}", response_model=DiaryResponse)
 async def api_read_diary(diary_id: int):
     """
     diary_id를 입력하면 해당하는 diary 객체의 정보를 불러옵니다.
@@ -123,7 +121,7 @@ async def api_read_diary(diary_id: int):
     return diary
 
 
-@postgres_router.put("/{diary_id}", response_model=DiaryResponse)
+@diary_router.put("/{diary_id}", response_model=DiaryResponse)
 async def api_update_diary(diary_id: int, diary_data: UpdateDiaryRequest):
     """
     diary_id로 조회하고 해당 객체가 존재하면 diary_data의 정보로 업데이트 합니다.
@@ -146,7 +144,7 @@ async def api_update_diary(diary_id: int, diary_data: UpdateDiaryRequest):
     return updated_diary
 
 
-@postgres_router.delete("/{diary_id}", response_model=DeleteDiaryResponse)
+@diary_router.delete("/{diary_id}", response_model=DeleteDiaryResponse)
 async def api_delete_diary(
     diary_id: int,
 ):
