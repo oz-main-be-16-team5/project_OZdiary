@@ -3,270 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZ Diary</title>
+    <title>OZ Diary - 유저 스토리 반영본</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1, h2 { color: #0056b3; }
-        input[type="text"], input[type="password"], textarea {
-            width: calc(100% - 22px); padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;
-        }
-        button {
-            padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;
-            margin-right: 5px;
-        }
-        button:hover { background-color: #0056b3; }
-        .error { color: red; margin-bottom: 10px; }
-        .diary-item {
-            background-color: #e9ecef; padding: 10px; margin-bottom: 10px; border-radius: 4px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .diary-content { flex-grow: 1; }
-        .diary-actions button { margin-left: 5px; }
-        #auth-section, #diary-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+        :root { --primary: #228be6; --bg: #f8f9fa; --card: #ffffff; --text: #333; }
+        body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg); color: var(--text); line-height: 1.6; }
+        .container { max-width: 800px; margin: 40px auto; background: var(--card); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+
+        /* 유저 스토리: 명언 & 질문 섹션 */
+        .info-box { background-color: #fff9db; border-left: 5px solid #fcc419; padding: 20px; margin-bottom: 25px; border-radius: 8px; position: relative; }
+        .bookmark-btn { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; border: none; background: none; }
+        .question-box { background-color: #e7f5ff; border-left: 5px solid #339af0; padding: 15px; margin-bottom: 25px; border-radius: 8px; font-weight: 500; }
+
+        h1, h2 { color: var(--primary); margin-top: 0; }
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { padding: 12px 24px; background-color: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        button:hover { filter: brightness(0.9); }
+        .error { color: #fa5252; font-size: 14px; margin-bottom: 15px; }
+        .diary-item { background: #f1f3f5; padding: 20px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-start; }
         .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>OZ Diary Web</h1>
+        <div id="main-display" class="hidden">
+            <div class="question-box" id="daily-question">🤔 오늘의 질문: 데이터를 불러오는 중...</div>
+            <div class="info-box">
+                <button class="bookmark-btn" onclick="bookmarkQuote()" title="북마크">⭐</button>
+                <div id="quote-content">"불러오는 중..."</div>
+                <small id="quote-author" style="display:block; margin-top:10px; text-align:right;"></small>
+            </div>
+        </div>
+
+        <h1>OZ Diary</h1>
 
         <div id="auth-section">
-            <h2>회원가입 / 로그인</h2>
+            <p>계정을 생성하고 일상을 기록해보세요.</p>
             <div class="error" id="auth-error"></div>
-            <input type="text" id="username" placeholder="사용자 이름">
-            <input type="password" id="password" placeholder="비밀번호">
-            <button onclick="signup()">회원가입</button>
-            <button onclick="login()">로그인</button>
-            <button onclick="logout()">로그아웃</button>
+            <input type="email" id="email" placeholder="이메일 (필수)">
+            <input type="text" id="username" placeholder="사용자 이름 (회원가입 시)">
+            <input type="password" id="password" placeholder="비밀번호 (8자 이상)">
+            <button onclick="auth('login')">로그인</button>
+            <button style="background-color: #adb5bd;" onclick="auth('signup')">회원가입</button>
         </div>
 
         <div id="diary-section" class="hidden">
-            <h2>새 일기 작성</h2>
-            <div class="error" id="diary-create-error"></div>
-            <input type="text" id="new-diary-title" placeholder="일기 제목">
-            <textarea id="new-diary-content" rows="5" placeholder="일기 내용"></textarea>
-            <button onclick="createDiary()">작성</button>
-
-            <h2 style="margin-top: 30px;">나의 일기 목록</h2>
-            <div class="error" id="diary-list-error"></div>
-            <div id="diary-list">
-                <p>일기가 없습니다. 새로운 일기를 작성해보세요!</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>나의 기록</h2>
+                <button style="background-color: #fa5252;" onclick="logout()">로그아웃</button>
             </div>
+
+            <input type="text" id="diary-title" placeholder="제목">
+            <textarea id="diary-content" rows="4" placeholder="내용을 작성하세요..."></textarea>
+            <button onclick="createDiary()">기록하기</button>
+
+            <div id="diary-list" style="margin-top:40px;"></div>
         </div>
     </div>
 
     <script>
-        // 백엔드 API의 기본 URL
-        const API_BASE_URL = 'http://localhost:8000'; // 백엔드 서버 주소에 맞게 변경하세요!
+        let currentQuoteId = null;
 
-        // JWT 토큰 저장 변수
-        let accessToken = localStorage.getItem('access_token');
-        let refreshToken = localStorage.getItem('refresh_token');
-
-        // UI 요소 참조
-        const authSection = document.getElementById('auth-section');
-        const diarySection = document.getElementById('diary-section');
-        const authError = document.getElementById('auth-error');
-        const diaryCreateError = document.getElementById('diary-create-error');
-        const diaryListError = document.getElementById('diary-list-error');
-        const diaryListDiv = document.getElementById('diary-list');
-
-        // 초기 로드 시 UI 상태 업데이트
         document.addEventListener('DOMContentLoaded', () => {
-            updateUIBasedOnAuth();
-            if (accessToken) {
-                fetchDiaries();
+            if (localStorage.getItem('token')) {
+                loadMainContent();
             }
         });
 
-        function updateUIBasedOnAuth() {
-            if (accessToken) {
-                authSection.classList.add('hidden');
-                diarySection.classList.remove('hidden');
-            } else {
-                authSection.classList.remove('hidden');
-                diarySection.classList.add('hidden');
-            }
-            authError.textContent = '';
-            diaryCreateError.textContent = '';
-            diaryListError.textContent = '';
-        }
-
-        async function makeRequest(method, url, data = null, needsAuth = true) {
-            const headers = {
-                'Content-Type': 'application/json',
-            };
-            if (needsAuth && accessToken) {
-                headers['Authorization'] = `Bearer ${accessToken}`;
-            }
+        // 1. 유저 스토리: 계정 생성 및 로그인
+        async function auth(type) {
+            const email = document.getElementById('email').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const path = type === 'login' ? '/auth/login' : '/auth/register';
+            const payload = type === 'login' ? { email, password } : { email, username, password };
 
             try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: headers,
-                    body: data ? JSON.stringify(data) : null,
+                const res = await fetch(path, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
-
-                if (response.ok) {
-                    return await response.json();
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || `HTTP Error: ${response.status}`);
-                }
-            } catch (error) {
-                console.error("API Request Error:", error);
-                throw error;
-            }
+                const data = await res.json();
+                if (res.ok) {
+                    if (type === 'login') {
+                        localStorage.setItem('token', data.access_token);
+                        loadMainContent();
+                    } else alert('회원가입 성공! 로그인해주세요.');
+                } else document.getElementById('auth-error').textContent = JSON.stringify(data.detail);
+            } catch (e) { alert('서버 연결 실패'); }
         }
 
-        // 회원가입
-        async function signup() {
-            authError.textContent = '';
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            try {
-                await makeRequest('POST', `${API_BASE_URL}/auth/signup`, { username, password }, false);
-                alert('회원가입 성공! 로그인해주세요.');
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-            } catch (error) {
-                authError.textContent = `회원가입 실패: ${error.message}`;
-            }
-        }
-
-        // 로그인
-        async function login() {
-            authError.textContent = '';
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            try {
-                const data = await makeRequest('POST', `${API_BASE_URL}/auth/login`, { username, password }, false);
-                accessToken = data.access_token;
-                refreshToken = data.refresh_token; // 백엔드에서 refresh_token도 준다면 저장
-                localStorage.setItem('access_token', accessToken);
-                localStorage.setItem('refresh_token', refreshToken);
-                alert('로그인 성공!');
-                updateUIBasedOnAuth();
-                fetchDiaries(); // 로그인 성공 후 일기 목록 가져오기
-            } catch (error) {
-                authError.textContent = `로그인 실패: ${error.message}`;
-            }
-        }
-
-        // 로그아웃
+        // 2. 유저 스토리: 로그아웃 및 세션 종료
         function logout() {
-            accessToken = null;
-            refreshToken = null;
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            alert('로그아웃 되었습니다.');
-            updateUIBasedOnAuth();
-            diaryListDiv.innerHTML = '<p>일기가 없습니다. 새로운 일기를 작성해보세요!</p>';
+            localStorage.removeItem('token');
+            location.reload();
         }
 
-        // 일기 생성
-        async function createDiary() {
-            diaryCreateError.textContent = '';
-            const title = document.getElementById('new-diary-title').value;
-            const content = document.getElementById('new-diary-content').value;
+        function loadMainContent() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('diary-section').classList.remove('hidden');
+            document.getElementById('main-display').classList.remove('hidden');
+            fetchRandomQuote();
+            fetchRandomQuestion();
+            fetchDiaries();
+        }
 
-            if (!title || !content) {
-                diaryCreateError.textContent = '제목과 내용을 모두 입력해주세요.';
-                return;
-            }
-
-            try {
-                await makeRequest('POST', `${API_BASE_URL}/diaries`, { title, content });
-                alert('일기가 작성되었습니다!');
-                document.getElementById('new-diary-title').value = '';
-                document.getElementById('new-diary-content').value = '';
-                fetchDiaries(); // 일기 작성 후 목록 새로고침
-            } catch (error) {
-                diaryCreateError.textContent = `일기 작성 실패: ${error.message}`;
+        // 3. 유저 스토리: 랜덤 명언 및 북마크
+        async function fetchRandomQuote() {
+            const res = await fetch('/quote/random');
+            if (res.ok) {
+                const data = await res.json();
+                currentQuoteId = data.id;
+                document.getElementById('quote-content').textContent = `"${data.content}"`;
+                document.getElementById('quote-author').textContent = `- ${data.author || '작자 미상'}`;
             }
         }
 
-        // 일기 목록 가져오기
-        async function fetchDiaries() {
-            diaryListError.textContent = '';
-            try {
-                const diaries = await makeRequest('GET', `${API_BASE_URL}/diaries`);
-                displayDiaries(diaries);
-            } catch (error) {
-                diaryListError.textContent = `일기 목록 불러오기 실패: ${error.message}`;
-                // 토큰 만료 등 인증 오류 시 로그아웃 처리
-                if (error.message.includes('Authentication') || error.message.includes('Unauthorized')) {
-                    logout();
-                }
-            }
-        }
-
-        // 일기 목록 UI에 표시
-        function displayDiaries(diaries) {
-            diaryListDiv.innerHTML = ''; // 기존 목록 초기화
-            if (diaries.length === 0) {
-                diaryListDiv.innerHTML = '<p>일기가 없습니다. 새로운 일기를 작성해보세요!</p>';
-                return;
-            }
-
-            diaries.forEach(diary => {
-                const diaryItem = document.createElement('div');
-                diaryItem.className = 'diary-item';
-                diaryItem.innerHTML = `
-                    <div class="diary-content">
-                        <h3>${diary.title}</h3>
-                        <p>${diary.content}</p>
-                        <small>작성일: ${new Date(diary.created_at).toLocaleString()}</small>
-                    </div>
-                    <div class="diary-actions">
-                        <button onclick="editDiaryPrompt(${diary.id}, '${diary.title}', '${diary.content.replace(/'/g, "\\'")}')">수정</button>
-                        <button onclick="deleteDiary(${diary.id})">삭제</button>
-                    </div>
-                `;
-                diaryListDiv.appendChild(diaryItem);
+        async function bookmarkQuote() {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/quote/${currentQuoteId}/bookmark`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (res.ok) alert('명언을 북마크했습니다!');
         }
 
-        // 일기 수정 프롬프트
-        function editDiaryPrompt(id, currentTitle, currentContent) {
-            const newTitle = prompt('새로운 제목을 입력하세요:', currentTitle);
-            if (newTitle === null) return; // 사용자가 취소 클릭
-            const newContent = prompt('새로운 내용을 입력하세요:', currentContent);
-            if (newContent === null) return; // 사용자가 취소 클릭
-
-            if (newTitle.trim() === '' || newContent.trim() === '') {
-                alert('제목과 내용을 모두 입력해야 합니다.');
-                return;
-            }
-            editDiary(id, newTitle, newContent);
-        }
-
-        // 일기 수정
-        async function editDiary(id, title, content) {
-            try {
-                await makeRequest('PUT', `${API_BASE_URL}/diaries/${id}`, { title, content });
-                alert('일기가 수정되었습니다!');
-                fetchDiaries(); // 수정 후 목록 새로고침
-            } catch (error) {
-                alert(`일기 수정 실패: ${error.message}`);
+        // 4. 유저 스토리: 랜덤 자기성찰 질문
+        async function fetchRandomQuestion() {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/questions/random', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('daily-question').textContent = `🤔 오늘의 질문: ${data.content}`;
             }
         }
 
-        // 일기 삭제
+        // 5. 유저 스토리: 일기 조회, 생성, 삭제 (수정은 프롬프트 대체)
+        async function fetchDiaries() {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/v1/diary/', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const diaries = await res.json();
+                const list = document.getElementById('diary-list');
+                list.innerHTML = diaries.length ? '' : '<p>작성된 일기가 없습니다.</p>';
+                diaries.forEach(d => {
+                    const item = document.createElement('div');
+                    item.className = 'diary-item';
+                    item.innerHTML = `
+                        <div><strong>${d.title}</strong><br><small>${d.content}</small></div>
+                        <div>
+                            <button onclick="updateDiary(${d.id}, '${d.title}', '${d.content}')">수정</button>
+                            <button style="background:#fa5252;" onclick="deleteDiary(${d.id})">삭제</button>
+                        </div>`;
+                    list.appendChild(item);
+                });
+            }
+        }
+
+        async function createDiary() {
+            const title = document.getElementById('diary-title').value;
+            const content = document.getElementById('diary-content').value;
+            const token = localStorage.getItem('token');
+            await fetch('/v1/diary/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ title, content })
+            });
+            fetchDiaries();
+        }
+
+        async function updateDiary(id, oldT, oldC) {
+            const title = prompt('수정할 제목:', oldT) || oldT;
+            const content = prompt('수정할 내용:', oldC) || oldC;
+            const token = localStorage.getItem('token');
+            await fetch(`/v1/diary/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ title, content })
+            });
+            fetchDiaries();
+        }
+
         async function deleteDiary(id) {
-            if (!confirm('정말로 이 일기를 삭제하시겠습니까?')) {
-                return;
-            }
-            try {
-                await makeRequest('DELETE', `${API_BASE_URL}/diaries/${id}`);
-                alert('일기가 삭제되었습니다!');
-                fetchDiaries(); // 삭제 후 목록 새로고침
-            } catch (error) {
-                alert(`일기 삭제 실패: ${error.message}`);
-            }
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            const token = localStorage.getItem('token');
+            await fetch(`/v1/diary/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            fetchDiaries();
         }
-
     </script>
 </body>
 </html>
