@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str
     POSTGRES_PORT: str
     POSTGRES_DB: str
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str = "HS256"
 
     @property
     def DATABASE_URL(self) -> str:
@@ -14,6 +16,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
 
 
 settings = Settings()  # type: ignore
