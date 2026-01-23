@@ -9,9 +9,29 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.question import router as question_router
 from app.api.v1.quote import router as quote_router
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from app.scraping.quote_scraper import scrape_quotes
+from app.services.quote_service import service_save_bulk_quotes
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # [Startup]
+    print("서버 시작: 명언 데이터를 수집합니다...")
+    try:
+        # HTTP 요청 대신 내부 함수를 직접 호출하여 DB에 저장
+        quotes = await scrape_quotes(page=1)
+        if quotes:
+            count = await service_save_bulk_quotes(quotes)
+            print(f"성공적으로 {count}개의 새로운 명언을 DB에 직접 저장했습니다.")
+    except Exception as e:
+        print(f"초기 스크레이핑 실패: {e}")
+
+    yield
+    print("서버를 종료합니다.")
+
+
+app = FastAPI(lifespan=lifespan)
 
 # DB 초기화
 init_db(app)
