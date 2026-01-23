@@ -9,8 +9,10 @@ BASE_URL = "https://saramro.com/quotes"
 API_BASE = "http://127.0.0.1:8000"  # uvicorn 주소
 API_ENDPOINT = f"{API_BASE}/quote"  # POST /quote
 
+
 def _clean_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
+
 
 def _split_content_author(text: str) -> Tuple[str, Optional[str]]:
     for sep in [" — ", " - ", " – ", "\n- ", "\n— "]:
@@ -20,6 +22,7 @@ def _split_content_author(text: str) -> Tuple[str, Optional[str]]:
             if left and right and len(right) <= 60:
                 return left, right
     return text, None
+
 
 async def scrape_quotes(page: int = 1) -> List[dict]:
     url = BASE_URL if page == 1 else f"{BASE_URL}?page={page}"
@@ -67,6 +70,7 @@ async def scrape_quotes(page: int = 1) -> List[dict]:
 
     return list(unique.values())
 
+
 async def save_quotes_to_api(quotes: List[dict]) -> None:
     """
     quotes: [{"content": "...", "author": "..."}, ...]
@@ -91,7 +95,9 @@ async def save_quotes_to_api(quotes: List[dict]) -> None:
 
         print(f"POST done. attempted={len(quotes)}, ok={saved}")
 
+
 if __name__ == "__main__":
+
     async def main():
         quotes = await scrape_quotes(page=1)
         print("scraped:", len(quotes))
