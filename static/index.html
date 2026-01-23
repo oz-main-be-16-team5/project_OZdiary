@@ -1,200 +1,401 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OZ Diary - 유저 스토리 반영본</title>
-    <style>
-        :root { --primary: #228be6; --bg: #f8f9fa; --card: #ffffff; --text: #333; }
-        body { font-family: 'Pretendard', sans-serif; margin: 0; background-color: var(--bg); color: var(--text); line-height: 1.6; }
-        .container { max-width: 800px; margin: 40px auto; background: var(--card); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OZ Diary</title>
+  <style>
+    :root { --primary:#228be6; --bg:#f8f9fa; --card:#fff; --text:#333; }
+    body { margin:0; font-family:Pretendard, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+    .container { max-width:800px; margin:40px auto; background:var(--card); padding:40px; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,.05); }
 
-        /* 유저 스토리: 명언 & 질문 섹션 */
-        .info-box { background-color: #fff9db; border-left: 5px solid #fcc419; padding: 20px; margin-bottom: 25px; border-radius: 8px; position: relative; }
-        .bookmark-btn { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 20px; border: none; background: none; }
-        .question-box { background-color: #e7f5ff; border-left: 5px solid #339af0; padding: 15px; margin-bottom: 25px; border-radius: 8px; font-weight: 500; }
+    .info-box { background:#fff9db; border-left:5px solid #fcc419; padding:20px; margin-bottom:25px; border-radius:8px; position:relative; }
+    .bookmark-btn { position:absolute; top:15px; right:15px; cursor:pointer; font-size:20px; border:none; background:none; }
+    .question-box { background:#e7f5ff; border-left:5px solid #339af0; padding:15px; margin-bottom:25px; border-radius:8px; font-weight:500; }
 
-        h1, h2 { color: var(--primary); margin-top: 0; }
-        input, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #dee2e6; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { padding: 12px 24px; background-color: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        button:hover { filter: brightness(0.9); }
-        .error { color: #fa5252; font-size: 14px; margin-bottom: 15px; }
-        .diary-item { background: #f1f3f5; padding: 20px; border-radius: 12px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-start; }
-        .hidden { display: none; }
-    </style>
+    h1,h2 { color:var(--primary); margin-top:0; }
+    input, textarea { width:100%; padding:12px; margin-bottom:15px; border:1px solid #dee2e6; border-radius:8px; box-sizing:border-box; font-size:16px; }
+    button { padding:12px 24px; background:var(--primary); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:.2s; }
+    button:hover { filter:brightness(.9); }
+    .error { color:#fa5252; font-size:14px; margin-bottom:15px; }
+    .diary-item { background:#f1f3f5; padding:20px; border-radius:12px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .hidden { display:none; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div id="main-display" class="hidden">
-            <div class="question-box" id="daily-question">🤔 오늘의 질문: 데이터를 불러오는 중...</div>
-            <div class="info-box">
-                <button class="bookmark-btn" onclick="bookmarkQuote()" title="북마크">⭐</button>
-                <div id="quote-content">"불러오는 중..."</div>
-                <small id="quote-author" style="display:block; margin-top:10px; text-align:right;"></small>
-            </div>
-        </div>
-
-        <h1>OZ Diary</h1>
-
-        <div id="auth-section">
-            <p>계정을 생성하고 일상을 기록해보세요.</p>
-            <div class="error" id="auth-error"></div>
-            <input type="email" id="email" placeholder="이메일 (필수)">
-            <input type="text" id="username" placeholder="사용자 이름 (회원가입 시)">
-            <input type="password" id="password" placeholder="비밀번호 (8자 이상)">
-            <button onclick="auth('login')">로그인</button>
-            <button style="background-color: #adb5bd;" onclick="auth('signup')">회원가입</button>
-        </div>
-
-        <div id="diary-section" class="hidden">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2>나의 기록</h2>
-                <button style="background-color: #fa5252;" onclick="logout()">로그아웃</button>
-            </div>
-
-            <input type="text" id="diary-title" placeholder="제목">
-            <textarea id="diary-content" rows="4" placeholder="내용을 작성하세요..."></textarea>
-            <button onclick="createDiary()">기록하기</button>
-
-            <div id="diary-list" style="margin-top:40px;"></div>
-        </div>
+  <div class="container">
+    <div id="main-display" class="hidden">
+      <div class="question-box" id="daily-question">🤔 오늘의 질문: 데이터를 불러오는 중...</div>
+      <div class="info-box">
+        <button class="bookmark-btn" onclick="bookmarkQuote()" title="북마크">⭐</button>
+        <div id="quote-content">"불러오는 중..."</div>
+        <small id="quote-author" style="display:block; margin-top:10px; text-align:right;"></small>
+      </div>
     </div>
 
-    <script>
-        let currentQuoteId = null;
+    <h1>OZ Diary</h1>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('token')) {
-                loadMainContent();
-            }
+    <div id="auth-section">
+      <p>계정을 생성하고 일상을 기록해보세요.</p>
+      <div class="error" id="auth-error"></div>
+      <input type="email" id="email" placeholder="이메일 (필수)" />
+      <input type="text" id="username" placeholder="사용자 이름 (회원가입 시)" />
+      <input type="password" id="password" placeholder="비밀번호 (8자 이상)" />
+      <button onclick="auth('login')">로그인</button>
+      <button style="background-color:#adb5bd;" onclick="auth('signup')">회원가입</button>
+    </div>
+
+    <div id="diary-section" class="hidden">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2>나의 기록</h2>
+        <button style="background-color:#fa5252;" onclick="logout()">로그아웃</button>
+      </div>
+
+      <input type="text" id="diary-title" placeholder="제목" />
+      <textarea id="diary-content" rows="4" placeholder="내용을 작성하세요..."></textarea>
+      <button onclick="createDiary()">기록하기</button>
+
+      <div id="diary-list" style="margin-top:40px;"></div>
+    </div>
+  </div>
+
+  <script>
+    /*****************************************************************
+     * ✅ 확정 엔드포인트
+     * - 질문: /questions/random
+     * - 명언: /quote/random
+     * - 일기: /v1/diary/
+     *
+     * ✅ 수정 버튼 안 먹는 문제 해결
+     * - onclick에 '${d.title}' 같은 문자열을 직접 넣으면
+     *   제목/내용에 ' (작은따옴표) 들어가는 순간 HTML/JS가 깨져서 수정만 안 됨
+     * - 해결: 버튼에 addEventListener로 안전하게 값 전달
+     *****************************************************************/
+
+    const QUESTION_CACHE_KEY = "today_question_cache_v1";
+    let currentQuoteId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('token')) {
+        loadMainContent();
+      }
+    });
+
+    // ---------- AUTH ----------
+    async function auth(type) {
+      const email = document.getElementById('email').value.trim();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      document.getElementById('auth-error').textContent = "";
+
+      const path = type === 'login' ? '/auth/login' : '/auth/register';
+      const payload = type === 'login' ? { email, password } : { email, username, password };
+
+      try {
+        const res = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
 
-        // 1. 유저 스토리: 계정 생성 및 로그인
-        async function auth(type) {
-            const email = document.getElementById('email').value;
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const path = type === 'login' ? '/auth/login' : '/auth/register';
-            const payload = type === 'login' ? { email, password } : { email, username, password };
+        const raw = await res.text();
+        let data;
+        try { data = JSON.parse(raw); } catch { data = { detail: raw }; }
 
-            try {
-                const res = await fetch(path, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (res.ok) {
-                    if (type === 'login') {
-                        localStorage.setItem('token', data.access_token);
-                        loadMainContent();
-                    } else alert('회원가입 성공! 로그인해주세요.');
-                } else document.getElementById('auth-error').textContent = JSON.stringify(data.detail);
-            } catch (e) { alert('서버 연결 실패'); }
+        if (!res.ok) {
+          document.getElementById('auth-error').textContent = JSON.stringify(data.detail || data);
+          console.log("auth failed:", res.status, data);
+          return;
         }
 
-        // 2. 유저 스토리: 로그아웃 및 세션 종료
-        function logout() {
-            localStorage.removeItem('token');
-            location.reload();
+        if (type === 'login') {
+          const token = data.access_token || data.token || data.accessToken;
+          if (!token) {
+            document.getElementById('auth-error').textContent =
+              "로그인 응답에 토큰(access_token)이 없습니다. 콘솔 확인!";
+            console.log("login response:", data);
+            return;
+          }
+          localStorage.setItem('token', token);
+          loadMainContent();
+        } else {
+          alert('회원가입 성공! 로그인해주세요.');
+        }
+      } catch (e) {
+        alert('서버 연결 실패');
+        console.log(e);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem(QUESTION_CACHE_KEY);
+      location.reload();
+    }
+
+    function loadMainContent() {
+      document.getElementById('auth-section').classList.add('hidden');
+      document.getElementById('diary-section').classList.remove('hidden');
+      document.getElementById('main-display').classList.remove('hidden');
+
+      fetchRandomQuote();
+      showCachedOrFetchQuestion();
+      fetchDiaries();
+    }
+
+    // ---------- QUOTE ----------
+    async function fetchRandomQuote() {
+      try {
+        const res = await fetch('/quote/random');
+        if (!res.ok) {
+          const raw = await res.text();
+          document.getElementById('quote-content').textContent = `"명언 불러오기 실패 (${res.status})"`;
+          document.getElementById('quote-author').textContent = "";
+          console.log("/quote/random failed:", res.status, raw);
+          return;
         }
 
-        function loadMainContent() {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('diary-section').classList.remove('hidden');
-            document.getElementById('main-display').classList.remove('hidden');
-            fetchRandomQuote();
-            fetchRandomQuestion();
-            fetchDiaries();
+        const data = await res.json();
+        currentQuoteId = data.id;
+        document.getElementById('quote-content').textContent = `"${data.content || data.text || ''}"`;
+        document.getElementById('quote-author').textContent = `- ${data.author || '작자 미상'}`;
+      } catch (e) {
+        document.getElementById('quote-content').textContent = `"명언 불러오기 실패"`;
+        document.getElementById('quote-author').textContent = "";
+        console.log("fetchRandomQuote error:", e);
+      }
+    }
+
+    async function bookmarkQuote() {
+      const token = localStorage.getItem('token');
+      if (!token) return alert("로그인이 필요합니다.");
+      if (!currentQuoteId) return alert("북마크할 명언이 없습니다.");
+
+      const res = await fetch(`/quote/${currentQuoteId}/bookmark`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) alert('명언을 북마크했습니다!');
+      else {
+        const raw = await res.text();
+        alert(`북마크 실패 (${res.status})`);
+        console.log("bookmark failed:", res.status, raw);
+      }
+    }
+
+    // ---------- QUESTION (캐시 + undefined 방지 + 400 문구) ----------
+    function todayKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function writeQuestionCache(questionText) {
+      localStorage.setItem(QUESTION_CACHE_KEY, JSON.stringify({ date: todayKey(), question: questionText }));
+    }
+
+    function readQuestionCache() {
+      const raw = localStorage.getItem(QUESTION_CACHE_KEY);
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.date !== todayKey()) return null;
+        return parsed;
+      } catch {
+        return null;
+      }
+    }
+
+    function showCachedOrFetchQuestion() {
+      const cached = readQuestionCache();
+      if (cached && cached.question) {
+        document.getElementById('daily-question').textContent = `🤔 오늘의 질문: ${cached.question}`;
+        return;
+      }
+      fetchRandomQuestion();
+    }
+
+    async function fetchRandomQuestion() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        document.getElementById('daily-question').textContent = '🤔 오늘의 질문: (로그인이 필요합니다)';
+        return;
+      }
+
+      try {
+        const res = await fetch('/questions/random', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          if (res.status === 400) {
+            const cached = readQuestionCache();
+            document.getElementById('daily-question').textContent =
+              cached?.question
+                ? `🤔 오늘의 질문: ${cached.question}`
+                : '🤔 오늘의 질문: 오늘은 질문을 이미 한번 받으셨습니다 😊';
+            return;
+          }
+
+          const raw = await res.text();
+          document.getElementById('daily-question').textContent = `🤔 오늘의 질문: (요청 실패 ${res.status})`;
+          console.log("/questions/random failed:", res.status, raw);
+          return;
         }
 
-        // 3. 유저 스토리: 랜덤 명언 및 북마크
-        async function fetchRandomQuote() {
-            const res = await fetch('/quote/random');
-            if (res.ok) {
-                const data = await res.json();
-                currentQuoteId = data.id;
-                document.getElementById('quote-content').textContent = `"${data.content}"`;
-                document.getElementById('quote-author').textContent = `- ${data.author || '작자 미상'}`;
-            }
+        const data = await res.json();
+
+        // ✅ content가 아니라도 커버해서 undefined 방지
+        const q =
+          data.content ||
+          data.question ||
+          data.text ||
+          data.message ||
+          (data.data && (data.data.content || data.data.question || data.data.text));
+
+        if (!q) {
+          document.getElementById('daily-question').textContent =
+            '🤔 오늘의 질문: (질문 데이터 형식이 달라요. 콘솔 확인!)';
+          console.log("questions/random unknown shape:", data);
+          return;
         }
 
-        async function bookmarkQuote() {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`/quote/${currentQuoteId}/bookmark`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) alert('명언을 북마크했습니다!');
-        }
+        document.getElementById('daily-question').textContent = `🤔 오늘의 질문: ${q}`;
+        writeQuestionCache(q);
+      } catch (e) {
+        document.getElementById('daily-question').textContent = '🤔 오늘의 질문: (서버 연결 실패)';
+        console.log("fetchRandomQuestion error:", e);
+      }
+    }
 
-        // 4. 유저 스토리: 랜덤 자기성찰 질문
-        async function fetchRandomQuestion() {
-            const token = localStorage.getItem('token');
-            const res = await fetch('/questions/random', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                document.getElementById('daily-question').textContent = `🤔 오늘의 질문: ${data.content}`;
-            }
-        }
+    // ---------- DIARY ----------
+    async function fetchDiaries() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-        // 5. 유저 스토리: 일기 조회, 생성, 삭제 (수정은 프롬프트 대체)
-        async function fetchDiaries() {
-            const token = localStorage.getItem('token');
-            const res = await fetch('/v1/diary/', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (res.ok) {
-                const diaries = await res.json();
-                const list = document.getElementById('diary-list');
-                list.innerHTML = diaries.length ? '' : '<p>작성된 일기가 없습니다.</p>';
-                diaries.forEach(d => {
-                    const item = document.createElement('div');
-                    item.className = 'diary-item';
-                    item.innerHTML = `
-                        <div><strong>${d.title}</strong><br><small>${d.content}</small></div>
-                        <div>
-                            <button onclick="updateDiary(${d.id}, '${d.title}', '${d.content}')">수정</button>
-                            <button style="background:#fa5252;" onclick="deleteDiary(${d.id})">삭제</button>
-                        </div>`;
-                    list.appendChild(item);
-                });
-            }
-        }
+      const res = await fetch('/v1/diary/', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
 
-        async function createDiary() {
-            const title = document.getElementById('diary-title').value;
-            const content = document.getElementById('diary-content').value;
-            const token = localStorage.getItem('token');
-            await fetch('/v1/diary/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ title, content })
-            });
-            fetchDiaries();
-        }
+      if (!res.ok) {
+        const raw = await res.text();
+        console.log("/v1/diary/ failed:", res.status, raw);
+        return;
+      }
 
-        async function updateDiary(id, oldT, oldC) {
-            const title = prompt('수정할 제목:', oldT) || oldT;
-            const content = prompt('수정할 내용:', oldC) || oldC;
-            const token = localStorage.getItem('token');
-            await fetch(`/v1/diary/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ title, content })
-            });
-            fetchDiaries();
-        }
+      const diaries = await res.json();
+      const list = document.getElementById('diary-list');
+      list.innerHTML = diaries.length ? '' : '<p>작성된 일기가 없습니다.</p>';
 
-        async function deleteDiary(id) {
-            if (!confirm('정말 삭제하시겠습니까?')) return;
-            const token = localStorage.getItem('token');
-            await fetch(`/v1/diary/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            fetchDiaries();
-        }
-    </script>
+      diaries.forEach(d => {
+        const item = document.createElement('div');
+        item.className = 'diary-item';
+
+        item.innerHTML = `
+          <div>
+            <strong>${escapeHtml(d.title ?? "")}</strong><br>
+            <small>${escapeHtml(d.content ?? "")}</small>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="edit-btn">수정</button>
+            <button class="del-btn" style="background:#fa5252;">삭제</button>
+          </div>
+        `;
+
+        // ✅ 핵심: onclick에 문자열 끼워 넣지 말고 이벤트로 안전하게 전달
+        item.querySelector('.edit-btn').addEventListener('click', () => {
+          updateDiary(d.id, d.title ?? "", d.content ?? "");
+        });
+
+        item.querySelector('.del-btn').addEventListener('click', () => {
+          deleteDiary(d.id);
+        });
+
+        list.appendChild(item);
+      });
+    }
+
+    async function createDiary() {
+      const title = document.getElementById('diary-title').value;
+      const content = document.getElementById('diary-content').value;
+      const token = localStorage.getItem('token');
+
+      const res = await fetch('/v1/diary/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, content })
+      });
+
+      if (!res.ok) {
+        const raw = await res.text();
+        alert(`일기 생성 실패 (${res.status})`);
+        console.log("createDiary failed:", res.status, raw);
+        return;
+      }
+
+      document.getElementById('diary-title').value = "";
+      document.getElementById('diary-content').value = "";
+      fetchDiaries();
+    }
+
+    async function updateDiary(id, oldT, oldC) {
+      const title = prompt('수정할 제목:', oldT);
+      const content = prompt('수정할 내용:', oldC);
+
+      // 취소하면 아무것도 안 함
+      if (title === null && content === null) return;
+
+      const token = localStorage.getItem('token');
+
+      const res = await fetch(`/v1/diary/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          title: title === null ? oldT : title,
+          content: content === null ? oldC : content
+        })
+      });
+
+      if (!res.ok) {
+        const raw = await res.text();
+        alert(`일기 수정 실패 (${res.status})`);
+        console.log("updateDiary failed:", res.status, raw);
+        return;
+      }
+
+      fetchDiaries();
+    }
+
+    async function deleteDiary(id) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/v1/diary/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const raw = await res.text();
+        alert(`일기 삭제 실패 (${res.status})`);
+        console.log("deleteDiary failed:", res.status, raw);
+        return;
+      }
+
+      fetchDiaries();
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
 </body>
 </html>
