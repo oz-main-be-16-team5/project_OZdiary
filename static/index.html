@@ -5,36 +5,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OZ Diary</title>
   <style>
-    :root { --primary:#228be6; --bg:#f8f9fa; --card:#fff; --text:#333; }
+    :root { --primary:#228be6; --bg:#f8f9fa; --card:#fff; --text:#333; --danger:#fa5252; --success:#40c057; }
     body { margin:0; font-family:Pretendard, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
     .container { max-width:800px; margin:40px auto; background:var(--card); padding:40px; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,.05); }
 
-    .info-box { background:#fff9db; border-left:5px solid #fcc419; padding:20px; margin-bottom:25px; border-radius:8px; position:relative; }
-    .bookmark-btn { position:absolute; top:15px; right:15px; cursor:pointer; font-size:20px; border:none; background:none; }
-    .question-box { background:#e7f5ff; border-left:5px solid #339af0; padding:15px; margin-bottom:25px; border-radius:8px; font-weight:500; }
+    .info-box { background:#fff9db; border-left:5px solid #fcc419; padding:20px; margin-bottom:18px; border-radius:8px; position:relative; }
+    .question-box { background:#e7f5ff; border-left:5px solid #339af0; padding:15px; margin-bottom:18px; border-radius:8px; font-weight:500; }
 
     h1,h2 { color:var(--primary); margin-top:0; }
     input, textarea { width:100%; padding:12px; margin-bottom:15px; border:1px solid #dee2e6; border-radius:8px; box-sizing:border-box; font-size:16px; }
-    button { padding:12px 24px; background:var(--primary); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:.2s; }
-    button:hover { filter:brightness(.9); }
-    .error { color:#fa5252; font-size:14px; margin-bottom:15px; }
+    button { padding:12px 16px; background:var(--primary); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:.2s; }
+    button:hover { filter:brightness(.92); }
+    .btn-danger { background:var(--danger); }
+    .btn-success { background:var(--success); }
+    .btn-gray { background:#adb5bd; }
+    .error { color:var(--danger); font-size:14px; margin-bottom:15px; }
     .diary-item { background:#f1f3f5; padding:20px; border-radius:12px; margin-bottom:15px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
     .hidden { display:none; }
+    .muted { color:#868e96; font-size:14px; }
+
+    /* ⭐ 토글용 별 버튼 */
+    .bookmark-btn {
+      position:absolute; top:14px; right:14px;
+      border:none; background:none; cursor:pointer;
+      font-size:22px; line-height:1;
+      transition:.15s;
+    }
+    .bookmark-btn:hover { transform: scale(1.08); }
+    .bookmark-btn.on { color:#fcc419; } /* 채워진 느낌 */
+    .bookmark-btn.off { color:#adb5bd; } /* 비활성 느낌 */
+
+    .row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .row button { flex: 1; min-width: 220px; }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- 로그인 후 상단 표시 영역 -->
     <div id="main-display" class="hidden">
       <div class="question-box" id="daily-question">🤔 오늘의 질문: 데이터를 불러오는 중...</div>
-      <div class="info-box">
-        <button class="bookmark-btn" onclick="bookmarkQuote()" title="북마크">⭐</button>
+
+      <!-- 랜덤 명언 카드 -->
+      <div class="info-box" id="quote-card">
+        <button id="bookmark-btn" class="bookmark-btn off" onclick="toggleBookmark()" title="북마크">☆</button>
         <div id="quote-content">"불러오는 중..."</div>
         <small id="quote-author" style="display:block; margin-top:10px; text-align:right;"></small>
+        <div class="muted" id="quote-status" style="margin-top:10px;"></div>
       </div>
+
+      <!-- 북마크 액션 버튼 -->
+      <div class="row">
+        <button class="btn-success" onclick="fetchBookmarks()">⭐ 내가 북마크한 명언 보기</button>
+        <button class="btn-gray" onclick="hideBookmarks()">숨기기</button>
+      </div>
+
+      <!-- 북마크 리스트 -->
+      <div id="bookmark-list" class="hidden"></div>
     </div>
 
     <h1>OZ Diary</h1>
 
+    <!-- 인증 영역 -->
     <div id="auth-section">
       <p>계정을 생성하고 일상을 기록해보세요.</p>
       <div class="error" id="auth-error"></div>
@@ -42,13 +73,14 @@
       <input type="text" id="username" placeholder="사용자 이름 (회원가입 시)" />
       <input type="password" id="password" placeholder="비밀번호 (8자 이상)" />
       <button onclick="auth('login')">로그인</button>
-      <button style="background-color:#adb5bd;" onclick="auth('signup')">회원가입</button>
+      <button class="btn-gray" onclick="auth('signup')">회원가입</button>
     </div>
 
+    <!-- 일기 영역 -->
     <div id="diary-section" class="hidden">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h2>나의 기록</h2>
-        <button style="background-color:#fa5252;" onclick="logout()">로그아웃</button>
+        <button class="btn-danger" onclick="logout()">로그아웃</button>
       </div>
 
       <input type="text" id="diary-title" placeholder="제목" />
@@ -60,141 +92,51 @@
   </div>
 
   <script>
-    /*****************************************************************
-     * ✅ 확정 엔드포인트
-     * - 질문: /questions/random
-     * - 명언: /quote/random
-     * - 일기: /v1/diary/
-     *
-     * ✅ 수정 버튼 안 먹는 문제 해결
-     * - onclick에 '${d.title}' 같은 문자열을 직접 넣으면
-     *   제목/내용에 ' (작은따옴표) 들어가는 순간 HTML/JS가 깨져서 수정만 안 됨
-     * - 해결: 버튼에 addEventListener로 안전하게 값 전달
-     *****************************************************************/
+    /**
+     * ✅ 백엔드 기준 엔드포인트(토큰 기반)
+     * - Auth:   POST /auth/login, POST /auth/register
+     * - Quote:  GET  /quote/random
+     *          POST   /quote/{quote_id}/bookmark
+     *          GET    /quote/bookmark
+     *          DELETE /quote/{quote_id}/bookmark
+     * - QnA:    GET  /questions/random
+     * - Diary:  GET/POST /v1/diary/ , PUT/DELETE /v1/diary/{id}
+     */
 
-    const QUESTION_CACHE_KEY = "today_question_cache_v1";
+    const QUESTION_CACHE_KEY = "today_question_cache_v2";
+
+    // 현재 랜덤 명언
     let currentQuoteId = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      if (localStorage.getItem('token')) {
-        loadMainContent();
-      }
+    // 북마크 상태 캐시(프론트용)
+    // key: quoteId(number), value: true/false
+    const bookmarkedMap = new Map();
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("token")) loadMainContent();
     });
 
-    // ---------- AUTH ----------
-    async function auth(type) {
-      const email = document.getElementById('email').value.trim();
-      const username = document.getElementById('username').value.trim();
-      const password = document.getElementById('password').value;
-      document.getElementById('auth-error').textContent = "";
-
-      const path = type === 'login' ? '/auth/login' : '/auth/register';
-      const payload = type === 'login' ? { email, password } : { email, username, password };
-
-      try {
-        const res = await fetch(path, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const raw = await res.text();
-        let data;
-        try { data = JSON.parse(raw); } catch { data = { detail: raw }; }
-
-        if (!res.ok) {
-          document.getElementById('auth-error').textContent = JSON.stringify(data.detail || data);
-          console.log("auth failed:", res.status, data);
-          return;
-        }
-
-        if (type === 'login') {
-          const token = data.access_token || data.token || data.accessToken;
-          if (!token) {
-            document.getElementById('auth-error').textContent =
-              "로그인 응답에 토큰(access_token)이 없습니다. 콘솔 확인!";
-            console.log("login response:", data);
-            return;
-          }
-          localStorage.setItem('token', token);
-          loadMainContent();
-        } else {
-          alert('회원가입 성공! 로그인해주세요.');
-        }
-      } catch (e) {
-        alert('서버 연결 실패');
-        console.log(e);
-      }
+    // ---------- UTIL ----------
+    function token() {
+      return localStorage.getItem("token");
     }
 
-    function logout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem(QUESTION_CACHE_KEY);
-      location.reload();
+    function authHeader() {
+      const t = token();
+      return t ? { Authorization: `Bearer ${t}` } : {};
     }
 
-    function loadMainContent() {
-      document.getElementById('auth-section').classList.add('hidden');
-      document.getElementById('diary-section').classList.remove('hidden');
-      document.getElementById('main-display').classList.remove('hidden');
-
-      fetchRandomQuote();
-      showCachedOrFetchQuestion();
-      fetchDiaries();
+    async function readJsonSafe(res) {
+      const raw = await res.text();
+      try { return JSON.parse(raw); } catch { return { detail: raw }; }
     }
 
-    // ---------- QUOTE ----------
-    async function fetchRandomQuote() {
-      try {
-        const res = await fetch('/quote/random');
-        if (!res.ok) {
-          const raw = await res.text();
-          document.getElementById('quote-content').textContent = `"명언 불러오기 실패 (${res.status})"`;
-          document.getElementById('quote-author').textContent = "";
-          console.log("/quote/random failed:", res.status, raw);
-          return;
-        }
-
-        const data = await res.json();
-        currentQuoteId = data.id;
-        document.getElementById('quote-content').textContent = `"${data.content || data.text || ''}"`;
-        document.getElementById('quote-author').textContent = `- ${data.author || '작자 미상'}`;
-      } catch (e) {
-        document.getElementById('quote-content').textContent = `"명언 불러오기 실패"`;
-        document.getElementById('quote-author').textContent = "";
-        console.log("fetchRandomQuote error:", e);
-      }
-    }
-
-    async function bookmarkQuote() {
-      const token = localStorage.getItem('token');
-      if (!token) return alert("로그인이 필요합니다.");
-      if (!currentQuoteId) return alert("북마크할 명언이 없습니다.");
-
-      const res = await fetch(`/quote/${currentQuoteId}/bookmark`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      if (res.ok) alert('명언을 북마크했습니다!');
-      else {
-        const raw = await res.text();
-        alert(`북마크 실패 (${res.status})`);
-        console.log("bookmark failed:", res.status, raw);
-      }
-    }
-
-    // ---------- QUESTION (캐시 + undefined 방지 + 400 문구) ----------
     function todayKey() {
       const now = new Date();
       const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
       return `${y}-${m}-${d}`;
-    }
-
-    function writeQuestionCache(questionText) {
-      localStorage.setItem(QUESTION_CACHE_KEY, JSON.stringify({ date: todayKey(), question: questionText }));
     }
 
     function readQuestionCache() {
@@ -209,75 +151,318 @@
       }
     }
 
+    function writeQuestionCache(questionText) {
+      localStorage.setItem(
+        QUESTION_CACHE_KEY,
+        JSON.stringify({ date: todayKey(), question: questionText })
+      );
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setQuoteStatus(msg) {
+      document.getElementById("quote-status").textContent = msg || "";
+    }
+
+    function setBookmarkIcon(isOn) {
+      const btn = document.getElementById("bookmark-btn");
+      btn.classList.toggle("on", !!isOn);
+      btn.classList.toggle("off", !isOn);
+      btn.textContent = isOn ? "★" : "☆";
+    }
+
+    // ---------- AUTH ----------
+    async function auth(type) {
+      const email = document.getElementById("email").value.trim();
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+      const authError = document.getElementById("auth-error");
+      authError.textContent = "";
+
+      const path = type === "login" ? "/auth/login" : "/auth/register";
+      const payload = type === "login" ? { email, password } : { email, username, password };
+
+      try {
+        const res = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await readJsonSafe(res);
+
+        if (!res.ok) {
+          authError.textContent = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
+          console.log("auth failed:", res.status, data);
+          return;
+        }
+
+        if (type === "login") {
+          const t = data.access_token;
+          if (!t) {
+            authError.textContent = "로그인 응답에 access_token이 없습니다.";
+            console.log("login response:", data);
+            return;
+          }
+          localStorage.setItem("token", t);
+          loadMainContent();
+        } else {
+          alert("회원가입 성공! 로그인해주세요.");
+        }
+      } catch (e) {
+        alert("서버 연결 실패");
+        console.log(e);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem(QUESTION_CACHE_KEY);
+      location.reload();
+    }
+
+    async function loadMainContent() {
+      document.getElementById("auth-section").classList.add("hidden");
+      document.getElementById("diary-section").classList.remove("hidden");
+      document.getElementById("main-display").classList.remove("hidden");
+
+      // ✅ 로그인 직후 북마크 목록을 한 번 가져와서 "별 상태"를 맞춰둔다
+      await warmupBookmarks();
+
+      await fetchRandomQuote();
+      showCachedOrFetchQuestion();
+      fetchDiaries();
+    }
+
+    // ---------- BOOKMARK WARMUP ----------
+    async function warmupBookmarks() {
+      bookmarkedMap.clear();
+      const t = token();
+      if (!t) return;
+
+      const res = await fetch("/quote/bookmark", { headers: { ...authHeader() } });
+      if (!res.ok) {
+        // 북마크 목록이 실패해도 나머지 기능은 동작하게 둠
+        const raw = await res.text();
+        console.log("warmupBookmarks failed:", res.status, raw);
+        return;
+      }
+
+      const quotes = await res.json();
+      quotes.forEach(q => bookmarkedMap.set(Number(q.id), true));
+    }
+
+    // ---------- QUOTE ----------
+    async function fetchRandomQuote() {
+      setQuoteStatus("");
+      try {
+        const res = await fetch("/quote/random");
+        if (!res.ok) {
+          const data = await readJsonSafe(res);
+          document.getElementById("quote-content").textContent = `"명언 불러오기 실패 (${res.status})"`;
+          document.getElementById("quote-author").textContent = "";
+          console.log("/quote/random failed:", res.status, data);
+          return;
+        }
+
+        const data = await res.json();
+        currentQuoteId = Number(data.id);
+
+        document.getElementById("quote-content").textContent = `"${data.content || ""}"`;
+        document.getElementById("quote-author").textContent = `- ${data.author || "작자 미상"}`;
+
+        // ✅ 현재 명언이 북마크 되어있으면 별을 채움
+        setBookmarkIcon(bookmarkedMap.get(currentQuoteId) === true);
+      } catch (e) {
+        document.getElementById("quote-content").textContent = `"명언 불러오기 실패"`;
+        document.getElementById("quote-author").textContent = "";
+        console.log("fetchRandomQuote error:", e);
+      }
+    }
+
+    // ⭐ 별 버튼 눌렀을 때: 북마크 추가/해제 토글
+    async function toggleBookmark() {
+      if (!currentQuoteId) return alert("명언을 먼저 불러와주세요.");
+      const isOn = bookmarkedMap.get(currentQuoteId) === true;
+
+      if (isOn) {
+        await removeBookmark(currentQuoteId, { silent: true });
+      } else {
+        await addBookmark(currentQuoteId, { silent: true });
+      }
+
+      // UI 반영
+      setBookmarkIcon(bookmarkedMap.get(currentQuoteId) === true);
+
+      // 북마크 리스트가 열려있으면 최신화
+      const list = document.getElementById("bookmark-list");
+      if (!list.classList.contains("hidden")) {
+        fetchBookmarks();
+      }
+    }
+
+    async function addBookmark(quoteId, { silent = false } = {}) {
+      if (!token()) return alert("로그인이 필요합니다.");
+
+      setQuoteStatus("북마크 추가 중...");
+      const res = await fetch(`/quote/${quoteId}/bookmark`, {
+        method: "POST",
+        headers: { ...authHeader() },
+      });
+
+      if (res.ok) {
+        const data = await readJsonSafe(res);
+        bookmarkedMap.set(Number(quoteId), true);
+        setQuoteStatus(data.message || "북마크 완료!");
+        if (!silent) alert(data.message || "북마크 완료!");
+        return true;
+      }
+
+      const raw = await res.text();
+      setQuoteStatus(`북마크 실패 (${res.status})`);
+      console.log("addBookmark failed:", res.status, raw);
+      if (!silent) alert(`북마크 실패 (${res.status})`);
+      return false;
+    }
+
+    async function removeBookmark(quoteId, { silent = false } = {}) {
+      if (!token()) return alert("로그인이 필요합니다.");
+
+      setQuoteStatus("북마크 해제 중...");
+      const res = await fetch(`/quote/${quoteId}/bookmark`, {
+        method: "DELETE",
+        headers: { ...authHeader() },
+      });
+
+      if (res.ok) {
+        const data = await readJsonSafe(res);
+        bookmarkedMap.delete(Number(quoteId));
+        setQuoteStatus(data.message || "북마크 해제 완료!");
+        if (!silent) alert(data.message || "북마크 해제 완료!");
+        return true;
+      }
+
+      const raw = await res.text();
+      setQuoteStatus(`해제 실패 (${res.status})`);
+      console.log("removeBookmark failed:", res.status, raw);
+      if (!silent) alert(`북마크 해제 실패 (${res.status})`);
+      return false;
+    }
+
+    // 내 북마크 목록 보기
+    async function fetchBookmarks() {
+      const t = token();
+      if (!t) return alert("로그인이 필요합니다.");
+
+      const res = await fetch("/quote/bookmark", {
+        headers: { ...authHeader() },
+      });
+
+      if (!res.ok) {
+        const raw = await res.text();
+        alert(`북마크 조회 실패 (${res.status})`);
+        console.log("fetchBookmarks failed:", res.status, raw);
+        return;
+      }
+
+      const quotes = await res.json();
+
+      // 캐시 업데이트(별 토글 정확도 ↑)
+      bookmarkedMap.clear();
+      quotes.forEach(q => bookmarkedMap.set(Number(q.id), true));
+      if (currentQuoteId != null) setBookmarkIcon(bookmarkedMap.get(currentQuoteId) === true);
+
+      const list = document.getElementById("bookmark-list");
+      list.classList.remove("hidden");
+
+      if (quotes.length === 0) {
+        list.innerHTML = "<p>⭐ 아직 북마크한 명언이 없습니다.</p>";
+        return;
+      }
+
+      list.innerHTML = quotes.map(q => `
+        <div class="info-box">
+          <div>"${escapeHtml(q.content)}"</div>
+          <small style="display:block; margin-top:10px; text-align:right;">
+            - ${escapeHtml(q.author || "작자 미상")}
+          </small>
+          <button class="btn-danger" style="margin-top:10px;" onclick="removeBookmark(${Number(q.id)})">
+            ❌ 북마크 해제
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function hideBookmarks() {
+      document.getElementById("bookmark-list").classList.add("hidden");
+    }
+
+    // ---------- QUESTION ----------
     function showCachedOrFetchQuestion() {
       const cached = readQuestionCache();
       if (cached && cached.question) {
-        document.getElementById('daily-question').textContent = `🤔 오늘의 질문: ${cached.question}`;
+        document.getElementById("daily-question").textContent = `🤔 오늘의 질문: ${cached.question}`;
         return;
       }
       fetchRandomQuestion();
     }
 
     async function fetchRandomQuestion() {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        document.getElementById('daily-question').textContent = '🤔 오늘의 질문: (로그인이 필요합니다)';
+      if (!token()) {
+        document.getElementById("daily-question").textContent = "🤔 오늘의 질문: (로그인이 필요합니다)";
         return;
       }
 
-      try {
-        const res = await fetch('/questions/random', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+      const res = await fetch("/questions/random", {
+        headers: { ...authHeader() },
+      });
 
-        if (!res.ok) {
-          if (res.status === 400) {
-            const cached = readQuestionCache();
-            document.getElementById('daily-question').textContent =
-              cached?.question
-                ? `🤔 오늘의 질문: ${cached.question}`
-                : '🤔 오늘의 질문: 오늘은 질문을 이미 한번 받으셨습니다 😊';
-            return;
-          }
-
-          const raw = await res.text();
-          document.getElementById('daily-question').textContent = `🤔 오늘의 질문: (요청 실패 ${res.status})`;
-          console.log("/questions/random failed:", res.status, raw);
+      if (!res.ok) {
+        if (res.status === 400) {
+          const cached = readQuestionCache();
+          document.getElementById("daily-question").textContent =
+            cached?.question
+              ? `🤔 오늘의 질문: ${cached.question}`
+              : "🤔 오늘의 질문: 오늘은 질문을 이미 한번 받으셨습니다 😊";
           return;
         }
-
-        const data = await res.json();
-
-        // ✅ content가 아니라도 커버해서 undefined 방지
-        const q =
-          data.content ||
-          data.question ||
-          data.text ||
-          data.message ||
-          (data.data && (data.data.content || data.data.question || data.data.text));
-
-        if (!q) {
-          document.getElementById('daily-question').textContent =
-            '🤔 오늘의 질문: (질문 데이터 형식이 달라요. 콘솔 확인!)';
-          console.log("questions/random unknown shape:", data);
-          return;
-        }
-
-        document.getElementById('daily-question').textContent = `🤔 오늘의 질문: ${q}`;
-        writeQuestionCache(q);
-      } catch (e) {
-        document.getElementById('daily-question').textContent = '🤔 오늘의 질문: (서버 연결 실패)';
-        console.log("fetchRandomQuestion error:", e);
+        const raw = await res.text();
+        document.getElementById("daily-question").textContent = `🤔 오늘의 질문: (요청 실패 ${res.status})`;
+        console.log("/questions/random failed:", res.status, raw);
+        return;
       }
+
+      const data = await res.json();
+      const q =
+        data.content ||
+        data.question ||
+        data.text ||
+        data.message ||
+        (data.data && (data.data.content || data.data.question || data.data.text));
+
+      if (!q) {
+        document.getElementById("daily-question").textContent = "🤔 오늘의 질문: (데이터 형식이 다릅니다. 콘솔 확인)";
+        console.log("questions/random unknown shape:", data);
+        return;
+      }
+
+      document.getElementById("daily-question").textContent = `🤔 오늘의 질문: ${q}`;
+      writeQuestionCache(q);
     }
 
     // ---------- DIARY ----------
     async function fetchDiaries() {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token()) return;
 
-      const res = await fetch('/v1/diary/', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res = await fetch("/v1/diary/", {
+        headers: { ...authHeader() },
       });
 
       if (!res.ok) {
@@ -287,46 +472,38 @@
       }
 
       const diaries = await res.json();
-      const list = document.getElementById('diary-list');
-      list.innerHTML = diaries.length ? '' : '<p>작성된 일기가 없습니다.</p>';
+      const list = document.getElementById("diary-list");
+      list.innerHTML = diaries.length ? "" : "<p>작성된 일기가 없습니다.</p>";
 
-      diaries.forEach(d => {
-        const item = document.createElement('div');
-        item.className = 'diary-item';
+      diaries.forEach((d) => {
+        const item = document.createElement("div");
+        item.className = "diary-item";
 
         item.innerHTML = `
           <div>
-            <strong>${escapeHtml(d.title ?? "")}</strong><br>
-            <small>${escapeHtml(d.content ?? "")}</small>
+            <strong>${escapeHtml(d.title)}</strong><br>
+            <small>${escapeHtml(d.content)}</small>
           </div>
           <div style="display:flex; gap:8px;">
             <button class="edit-btn">수정</button>
-            <button class="del-btn" style="background:#fa5252;">삭제</button>
+            <button class="del-btn btn-danger">삭제</button>
           </div>
         `;
 
-        // ✅ 핵심: onclick에 문자열 끼워 넣지 말고 이벤트로 안전하게 전달
-        item.querySelector('.edit-btn').addEventListener('click', () => {
-          updateDiary(d.id, d.title ?? "", d.content ?? "");
-        });
-
-        item.querySelector('.del-btn').addEventListener('click', () => {
-          deleteDiary(d.id);
-        });
-
+        item.querySelector(".edit-btn").addEventListener("click", () => updateDiary(d.id, d.title, d.content));
+        item.querySelector(".del-btn").addEventListener("click", () => deleteDiary(d.id));
         list.appendChild(item);
       });
     }
 
     async function createDiary() {
-      const title = document.getElementById('diary-title').value;
-      const content = document.getElementById('diary-content').value;
-      const token = localStorage.getItem('token');
+      const title = document.getElementById("diary-title").value;
+      const content = document.getElementById("diary-content").value;
 
-      const res = await fetch('/v1/diary/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ title, content })
+      const res = await fetch("/v1/diary/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({ title, content }),
       });
 
       if (!res.ok) {
@@ -336,27 +513,23 @@
         return;
       }
 
-      document.getElementById('diary-title').value = "";
-      document.getElementById('diary-content').value = "";
+      document.getElementById("diary-title").value = "";
+      document.getElementById("diary-content").value = "";
       fetchDiaries();
     }
 
     async function updateDiary(id, oldT, oldC) {
-      const title = prompt('수정할 제목:', oldT);
-      const content = prompt('수정할 내용:', oldC);
-
-      // 취소하면 아무것도 안 함
+      const title = prompt("수정할 제목:", oldT);
+      const content = prompt("수정할 내용:", oldC);
       if (title === null && content === null) return;
 
-      const token = localStorage.getItem('token');
-
       const res = await fetch(`/v1/diary/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({
           title: title === null ? oldT : title,
-          content: content === null ? oldC : content
-        })
+          content: content === null ? oldC : content,
+        }),
       });
 
       if (!res.ok) {
@@ -370,12 +543,11 @@
     }
 
     async function deleteDiary(id) {
-      if (!confirm('정말 삭제하시겠습니까?')) return;
+      if (!confirm("정말 삭제하시겠습니까?")) return;
 
-      const token = localStorage.getItem('token');
       const res = await fetch(`/v1/diary/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: "DELETE",
+        headers: { ...authHeader() },
       });
 
       if (!res.ok) {
@@ -386,15 +558,6 @@
       }
 
       fetchDiaries();
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
     }
   </script>
 </body>
