@@ -48,6 +48,7 @@ async def create_quote(payload: CreateQuoteRequest):
         content=payload.content,
         author=payload.author,
     )
+
     if exists:
         return QuoteResponse.model_validate(exists)
 
